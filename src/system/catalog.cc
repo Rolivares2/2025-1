@@ -1,5 +1,6 @@
 #include "catalog.h"
 
+#include <algorithm>
 #include <stdexcept>
 
 #include "exceptions/exceptions.h"
