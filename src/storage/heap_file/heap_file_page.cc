@@ -75,6 +75,9 @@ bool HeapFilePage::get_record(int32_t dir_pos, Record& out) const {
 
 void HeapFilePage::delete_record(int32_t dir_pos) {
   // TODO: implement
+  set_dir(dir_pos, -1);
+  auto dir = get_dir(dir_pos);
+  page.write_int32(dir_pos, dir);
 }
 
 bool HeapFilePage::try_insert_record(const Record& record, RID* out_record_id) {
