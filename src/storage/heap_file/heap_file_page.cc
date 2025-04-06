@@ -6,6 +6,7 @@
 #include "relational_model/record.h"
 #include "storage/page.h"
 #include "system/system.h"
+#include <iostream>
 
 HeapFilePage::HeapFilePage(FileId file_id, uint64_t page_number)
     : page(buffer_mgr.get_page(file_id, page_number)) {
@@ -82,13 +83,37 @@ void HeapFilePage::delete_record(int32_t dir_pos) {
 
 bool HeapFilePage::try_insert_record(const Record& record, RID* out_record_id) {
   // TODO: implement
+  auto serialized_record = serializeRecord(record);
+  std::cout << get_free_space() << std::endl;
   return true;
 }
 
 void HeapFilePage::vacuum(const Schema& schema) {
   char* page_buf = new char[Page::SIZE];
-
   // TODO: implement
-
   delete[] page_buf;
+}
+
+std::vector<uint8_t> HeapFilePage::serializeRecord(const Record& record) {
+  std::vector<uint8_t> bytes;
+  for (const auto& v : record.values) {
+      switch (v.datatype) {
+        case DataType::INT: {
+          int64_t int_value = v.value.as_int;
+          for (int i = 0; i<8 ;i++){
+              bytes.push_back(static_cast<uint8_t>((int_value) >> (i*8) & 0xFF));
+          }
+          break;
+        }
+        case DataType::STR: {
+          auto str_value = v.value.as_str;
+          size_t str_len = strlen(str_value);
+          std::cout << "El largo del string" <<str_len << std::endl;
+          bytes.push_back(static_cast<uint8_t>(str_len));
+          bytes.insert(bytes.end(), str_value, str_value + str_len);
+          break;
+        }
+      }
+  }
+  return bytes;
 }
