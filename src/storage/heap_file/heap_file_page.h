@@ -31,7 +31,7 @@ public:
   int32_t get_free_space() const;
 
   int32_t get_dir(int32_t idx) const;
-  std::vector<uint8_t> serializeRecord(const Record& record);
+  std::vector<char> serializeRecord(const Record& record);
 
 private:
   void set_dir_count(int32_t new_dir_count);

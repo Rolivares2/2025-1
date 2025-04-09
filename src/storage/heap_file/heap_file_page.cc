@@ -76,16 +76,44 @@ bool HeapFilePage::get_record(int32_t dir_pos, Record& out) const {
 
 void HeapFilePage::delete_record(int32_t dir_pos) {
   // TODO: implement
-  set_dir(dir_pos, -1);
-  auto dir = get_dir(dir_pos);
-  page.write_int32(dir_pos, dir);
+  //set_dir(dir_pos, -1);
 }
 
 bool HeapFilePage::try_insert_record(const Record& record, RID* out_record_id) {
   // TODO: implement
   auto serialized_record = serializeRecord(record);
-  std::cout << get_free_space() << std::endl;
-  return true;
+  size_t record_size = serialized_record.size();
+  size_t free_space = get_free_space();
+  auto dir_count = get_dir_count();
+
+  if (free_space < record_size) {
+    // La página no tiene suficiente espacio.
+    return false;
+  }
+
+  size_t free_space_offset = 8 + dir_count * 4 + free_space - record_size;
+  std::cout << free_space << std::endl;
+  std::cout << free_space_offset << std::endl;
+  for (int i = 0; i < dir_count; i++) {
+    if (get_dir(i) == -1) {
+      page.write(free_space_offset, record_size, serialized_record.data());
+      set_free_space(free_space - record_size);
+      set_dir(i, free_space_offset);
+      *out_record_id = RID(page.get_page_number(), i);
+      return true;
+    }
+  }
+
+  if (free_space > record_size + 4) {
+      set_dir_count(dir_count + 1);
+      page.write(free_space_offset, record_size, serialized_record.data());
+      set_dir(dir_count, free_space_offset);
+      set_free_space(free_space - record_size - 4);
+      *out_record_id = RID(page.get_page_number(), dir_count);
+      return true;
+    }
+
+  return false;
 }
 
 void HeapFilePage::vacuum(const Schema& schema) {
@@ -94,8 +122,8 @@ void HeapFilePage::vacuum(const Schema& schema) {
   delete[] page_buf;
 }
 
-std::vector<uint8_t> HeapFilePage::serializeRecord(const Record& record) {
-  std::vector<uint8_t> bytes;
+std::vector<char> HeapFilePage::serializeRecord(const Record& record) {
+  std::vector<char> bytes;
   for (const auto& v : record.values) {
       switch (v.datatype) {
         case DataType::INT: {
