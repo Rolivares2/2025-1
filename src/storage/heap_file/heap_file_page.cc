@@ -75,12 +75,16 @@ bool HeapFilePage::get_record(int32_t dir_pos, Record& out) const {
 }
 
 void HeapFilePage::delete_record(int32_t dir_pos) {
-  // TODO: implement
-  //set_dir(dir_pos, -1);
+  // Verificamos que el directorio exista, en caso
+  // contrario podría corromper la página.
+  if (dir_pos < get_dir_count()) {
+    set_dir(dir_pos, -1);
+  } else {
+    std::cout << "Intentaste eliminar un directorio inexistente" << std::endl;
+  }
 }
 
 bool HeapFilePage::try_insert_record(const Record& record, RID* out_record_id) {
-  // TODO: implement
   auto serialized_record = serializeRecord(record);
   size_t record_size = serialized_record.size();
   size_t free_space = get_free_space();
@@ -92,8 +96,6 @@ bool HeapFilePage::try_insert_record(const Record& record, RID* out_record_id) {
   }
 
   size_t free_space_offset = 8 + dir_count * 4 + free_space - record_size;
-  std::cout << free_space << std::endl;
-  std::cout << free_space_offset << std::endl;
   for (int i = 0; i < dir_count; i++) {
     if (get_dir(i) == -1) {
       page.write(free_space_offset, record_size, serialized_record.data());
@@ -136,7 +138,6 @@ std::vector<char> HeapFilePage::serializeRecord(const Record& record) {
         case DataType::STR: {
           auto str_value = v.value.as_str;
           size_t str_len = strlen(str_value);
-          std::cout << "El largo del string" <<str_len << std::endl;
           bytes.push_back(static_cast<uint8_t>(str_len));
           bytes.insert(bytes.end(), str_value, str_value + str_len);
           break;
