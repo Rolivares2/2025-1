@@ -55,6 +55,10 @@ set(BUILD_TARGETS
     create_table
     insert
     print_table
+    test_delete
+    test_vacuum
+    vacuum
+    delete_first
 )
 
 # Build targets
