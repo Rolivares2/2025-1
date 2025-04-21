@@ -9,13 +9,13 @@ BufferManager& buffer_mgr = reinterpret_cast<BufferManager&>(buffer_mgr_buf);
 FileManager& file_mgr = reinterpret_cast<FileManager&>(file_mgr_buf);
 Catalog& catalog = reinterpret_cast<Catalog&>(catalog_buf);
 
-System::System(const std::string& db_folder, uint64_t buffer_size) {
+System::System(const std::string& db_folder, int64_t buffer_size) {
   new (&file_mgr) FileManager(db_folder);
   new (&buffer_mgr) BufferManager(buffer_size);
   new (&catalog) Catalog("catalog.dat");
 }
 
-System System::init(const std::string& db_folder, uint64_t buffer_size) {
+System System::init(const std::string& db_folder, int64_t buffer_size) {
   return System(db_folder, buffer_size);
 }
 

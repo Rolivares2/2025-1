@@ -1,5 +1,16 @@
 # IIC3413-DB
 
+## Lab 2 Testing
+There is one example test at `src/bin/test_lab2.cc`. After compiling the project you can run it
+passing a parameter `t`. For example if you want `t` = 10000:
+```bash
+build/Debug/bin/test_lab2 10000
+```
+
+Be careful on running this on a too high number, as the size on disk increases with the parameter.
+
+The aim of this test is not to be the only test you use, but to provide an example on how you can test your solution.
+
 ## Project Build
 
 Install Dependencies:
@@ -35,24 +46,4 @@ cmake -Bbuild/Debug -DCMAKE_BUILD_TYPE=Debug && cmake --build build/Debug/
 To use multiple cores during compilation (much faster) add `-j n` at the end of the previous commands, replacing `n` with the desired number of threads. Example for 8 threads:
 ```bash
 cmake -Bbuild/Debug -DCMAKE_BUILD_TYPE=Debug && cmake --build build/Debug/ -j 8
-```
-
-## Lab 1 testing:
-
-To create an example database:
-```bash
-./build/Debug/bin/create_db
-```
-that will create the database folder `data/test_example`.
-
-You can change the schema or add more tables modifying the file `src/bin/create_db.cc`
-
-Then you can query the database with `print_table`, passing as first parameter an existing database folder, and as a second parameter the table name:
-```bash
-./build/Debug/bin/print_table <db_folder> <table_name>
-```
-
-Example:
-```bash
-./build/Debug/bin/print_table data/test_example t1
 ```

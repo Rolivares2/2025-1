@@ -5,6 +5,7 @@
 
 #include "exceptions/exceptions.h"
 #include "relational_model/schema.h"
+#include "storage/b_plus_tree/b_plus_tree.h"
 #include "storage/heap_file/heap_file.h"
 #include "system/system.h"
 
@@ -24,7 +25,7 @@ std::string Catalog::normalize(const std::string& table_name) {
   return res;
 }
 
-uint64_t Catalog::get_table_pos(const std::string& table_name) const {
+int64_t Catalog::get_table_pos(const std::string& table_name) const {
   std::string normalized_table_name = normalize(table_name);
   auto found = table_name_idx.find(normalized_table_name);
   if (found != table_name_idx.end()) {
@@ -50,14 +51,14 @@ Catalog::Catalog(const string& filename) {
 
   file.seekg(0, file.beg);
 
-  uint64_t tables_count = read_uint64();
-  for (uint64_t i = 0; i < tables_count; ++i) {
+  int64_t tables_count = read_int64();
+  for (int64_t i = 0; i < tables_count; ++i) {
     std::vector<ColumnInfo> columns;
 
     std::string table_name = read_string();
-    uint64_t table_cardinality = read_uint64();
-    for (uint64_t c = 0; c < table_cardinality; ++c) {
-      DataType d = static_cast<DataType>(read_uint64());
+    int64_t table_cardinality = read_int64();
+    for (int64_t c = 0; c < table_cardinality; ++c) {
+      DataType d = static_cast<DataType>(read_int64());
       std::string col_name = read_string();
       columns.push_back({col_name, d});
     }
@@ -68,46 +69,75 @@ Catalog::Catalog(const string& filename) {
     auto heap_file = std::make_unique<HeapFile>(i, schema_ref, table_name);
     table_name_idx.insert({table_name, tables.size()});
 
-    tables.emplace_back(table_name, std::move(schema), std::move(heap_file));
+    std::unique_ptr<Index> index;
+    IndexType index_type = static_cast<IndexType>(read_int64());
+    switch (index_type) {
+    case IndexType::B_PLUS_TREE: {
+      auto key_col_idx = read_int64();
+      index = std::make_unique<BPlusTree>(*heap_file.get(), key_col_idx, normalize(table_name));
+      break;
+    }
+    case IndexType::NONE:
+      break;
+    }
+
+    tables.emplace_back(table_name, std::move(schema), std::move(heap_file), std::move(index));
   }
 }
 
 Catalog::~Catalog() {
   file.seekg(0, file.beg);
 
-  write_uint64(tables.size());
+  write_int64(tables.size());
   for (auto& table_info : tables) {
     write_string(table_info.name);
     auto& schema = table_info.schema;
 
-    write_uint64(schema->columns.size());
+    write_int64(schema->columns.size());
     for (size_t i = 0; i < schema->columns.size(); i++) {
-      write_uint64(static_cast<uint64_t>(schema->columns[i].datatype));
+      write_int64(static_cast<int64_t>(schema->columns[i].datatype));
       write_string(schema->columns[i].name);
+    }
+
+    // write index type
+    if (table_info.index == nullptr) {
+      write_int64(static_cast<uint64_t>(IndexType::NONE));
+    } else {
+      auto index_type = table_info.index->get_type();
+      write_int64(static_cast<uint64_t>(index_type));
+      switch (index_type) {
+      case IndexType::B_PLUS_TREE: {
+        auto casted = reinterpret_cast<BPlusTree*>(table_info.index.get());
+        write_int64(casted->key_column_idx);
+        break;
+      }
+      case IndexType::NONE:
+        break;
+      }
     }
   }
 
   file.close();
 }
 
-uint64_t Catalog::read_uint64() {
-  uint64_t res = 0;
+int64_t Catalog::read_int64() {
+  int64_t res = 0;
   uint8_t buf[8];
   file.read((char*)buf, sizeof(buf));
 
   for (int i = 0, shift = 0; i < 8; ++i, shift += 8) {
-    res |= static_cast<uint64_t>(buf[i]) << shift;
+    res |= static_cast<int64_t>(buf[i]) << shift;
   }
 
   if (!file.good()) {
-    throw std::runtime_error("Error reading uint64");
+    throw std::runtime_error("Error reading int64");
   }
 
   return res;
 }
 
 string Catalog::read_string() {
-  uint_fast32_t len = read_uint64();
+  auto len = read_int64();
   char* buf = new char[len];
   file.read(buf, len);
   string res(buf, len);
@@ -115,7 +145,7 @@ string Catalog::read_string() {
   return res;
 }
 
-void Catalog::write_uint64(const uint64_t n) {
+void Catalog::write_int64(const int64_t n) {
   uint8_t buf[8];
   for (unsigned int i = 0, shift = 0; i < sizeof(buf); ++i, shift += 8) {
     buf[i] = (n >> shift) & 0xFF;
@@ -124,7 +154,7 @@ void Catalog::write_uint64(const uint64_t n) {
 }
 
 void Catalog::write_string(const string& s) {
-  write_uint64(s.size());
+  write_int64(s.size());
   file.write(s.c_str(), s.size());
 }
 
@@ -142,7 +172,7 @@ HeapFile* Catalog::create_table(const std::string& table_name, const Schema& sch
 
   auto heap_file = std::make_unique<HeapFile>(table_id, schema, normalized_table_name);
 
-  tables.emplace_back(normalized_table_name, std::make_unique<Schema>(schema), std::move(heap_file));
+  tables.emplace_back(normalized_table_name, std::make_unique<Schema>(schema), std::move(heap_file), nullptr);
 
   return tables.back().heap_file.get();
 }
@@ -168,11 +198,24 @@ RID Catalog::insert_record(
   auto& record = *tables[table_pos].record_buf;
   record.set(values);
 
-  return tables[table_pos].heap_file->insert_record(record);
+  auto rid = tables[table_pos].heap_file->insert_record(record);
+
+  auto index = tables[get_table_pos(table_name)].index.get();
+  if (index != nullptr) {
+    index->insert_record(rid);
+  }
+
+  return rid;
 }
 
 void Catalog::delete_record(const std::string& table_name, RID rid) {
   auto table_pos = get_table_pos(table_name);
+
+  // MUST delete from the index before the table, otherwise rid will be invalid
+  auto index = get_index(table_name);
+  if (index != nullptr) {
+    index->delete_record(rid);
+  }
   tables[table_pos].heap_file->delete_record(rid);
 }
 
@@ -211,4 +254,27 @@ const TableInfo& Catalog::get_table_info(const std::string& table_name) const {
 FileId Catalog::get_file_id(TableId tid) {
   assert(tables.size() > tid);
   return tables[tid].heap_file->file_id;
+}
+
+void Catalog::create_index(const std::string& table_name, int key_col_idx) {
+  auto table_pos = get_table_pos(table_name);
+
+  auto& table_info = tables[table_pos];
+  if (table_info.index != nullptr) {
+    throw QueryException("table: `" + table_name + "` already has an index.");
+  }
+
+  table_info.index =
+      std::make_unique<BPlusTree>(*table_info.heap_file, key_col_idx, normalize(table_name) + ".bpt");
+
+  auto iter = table_info.heap_file->get_record_iter();
+  Record record_buf(*table_info.schema);
+  iter->begin(record_buf);
+  while (iter->next()) {
+    table_info.index->insert_record(iter->get_current_RID());
+  }
+}
+
+Index* Catalog::get_index(const std::string& table_name) {
+  return tables[get_table_pos(table_name)].index.get();
 }

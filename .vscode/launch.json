@@ -2,7 +2,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "create_db",
+            "name": "Test L2",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Debug/bin/test_lab2",
+            "args": [
+                "50000"
+            ],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "Debug Build"
+        },
+        {
+            "name": "CreateDB",
             "type": "lldb",
             "request": "launch",
             "program": "${workspaceFolder}/build/Debug/bin/create_db",
@@ -10,6 +21,18 @@
             ],
             "cwd": "${workspaceFolder}",
             "preLaunchTask": "Debug Build"
-        }
+        },
+        {
+            "name": "print table",
+            "type": "lldb",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Debug/bin/print_table",
+            "args": [
+                "data/test_example",
+                "test_1"
+            ],
+            "cwd": "${workspaceFolder}",
+            "preLaunchTask": "Debug Build"
+        },
     ]
 }

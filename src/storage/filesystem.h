@@ -30,7 +30,7 @@ static void create_directories(const std::string& str) {
 }
 
 [[maybe_unused]]
-static uint64_t file_size(const std::string& file) {
+static int64_t file_size(const std::string& file) {
   return std::filesystem::file_size(file);
 }
 
@@ -42,11 +42,6 @@ static std::string get_extension(const std::string& path) {
 [[maybe_unused]]
 static std::string replace_extension(const std::string& path, const std::string& ext) {
   return std::filesystem::path(path).replace_extension(ext);
-}
-
-[[maybe_unused]]
-static std::uintmax_t remove_all(const std::filesystem::path& p) {
-  return std::filesystem::remove_all(p);
 }
 
 [[maybe_unused]]

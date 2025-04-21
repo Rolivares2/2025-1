@@ -39,8 +39,12 @@ public:
 
   FileId get_file_id(TableId tid);
 
+  void create_index(const std::string& table_name, int key_col_idx);
+
+  Index* get_index(const std::string& table_name);
+
 private:
-  std::map<std::string, uint64_t> table_name_idx;
+  std::map<std::string, int64_t> table_name_idx;
 
   std::vector<TableInfo> tables;
 
@@ -48,13 +52,13 @@ private:
 
   static std::string normalize(const std::string& table_name);
 
-  uint64_t read_uint64();
+  int64_t read_int64();
 
   std::string read_string();
 
-  uint64_t get_table_pos(const std::string& table_name) const;
+  int64_t get_table_pos(const std::string& table_name) const;
 
-  void write_uint64(const uint64_t);
+  void write_int64(const int64_t);
 
   void write_string(const std::string&);
 };

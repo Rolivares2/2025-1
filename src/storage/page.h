@@ -10,7 +10,7 @@ class Page {
   friend class FileManager;
 
 public:
-  static constexpr size_t SIZE = 4096;
+  static constexpr auto SIZE = 4096;
 
   // contains file_id and page_number of this page
   PageId page_id;
@@ -27,7 +27,7 @@ public:
   void write_int64(size_t offset, int64_t);
 
   // get page number
-  inline uint32_t get_page_number() const noexcept {
+  inline int32_t get_page_number() const noexcept {
     return page_id.page_number;
   };
 
@@ -46,7 +46,7 @@ private:
   char* bytes;
 
   // count of objects using this page, modified only by buffer_manager
-  std::atomic<uint32_t> pins;
+  std::atomic<int32_t> pins;
 
   // used by the replacement policy
   bool second_chance;

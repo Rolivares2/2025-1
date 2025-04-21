@@ -36,5 +36,5 @@ public:
 private:
   // remembers where was the last insert so it doesn't begin from the start
   // the next time
-  uint_fast32_t last_insert_page = 0;
+  int64_t last_insert_page = 0;
 };

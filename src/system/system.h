@@ -8,12 +8,12 @@ class System {
 public:
   ~System();
 
-  static System init(const std::string& db_folder, uint64_t buffer_size);
+  static System init(const std::string& db_folder, int64_t buffer_size);
 
 private:
   static inline bool initialized = false;
 
-  System(const std::string& db_folder, uint64_t buffer_size);
+  System(const std::string& db_folder, int64_t buffer_size);
 };
 
 // global objects

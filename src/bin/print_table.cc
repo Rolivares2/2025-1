@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
     }
     std::cout << '\n';
 
-    uint64_t total_results = 0;
+    int64_t total_results = 0;
 
     auto iter = heap_file->get_record_iter();
 

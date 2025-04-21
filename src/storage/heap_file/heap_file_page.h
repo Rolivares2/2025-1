@@ -10,7 +10,7 @@ class HeapFilePage {
 public:
   Page& page;
 
-  HeapFilePage(FileId file_id, uint64_t page_number);
+  HeapFilePage(FileId file_id, int64_t page_number);
 
   ~HeapFilePage();
 

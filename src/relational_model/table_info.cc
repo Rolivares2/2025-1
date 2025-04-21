@@ -5,10 +5,14 @@
 #include "storage/heap_file/heap_file.h"
 
 TableInfo::TableInfo(
-    const std::string& name, std::unique_ptr<Schema> _schema, std::unique_ptr<HeapFile> heap_file
+    const std::string& name,
+    std::unique_ptr<Schema> _schema,
+    std::unique_ptr<HeapFile> heap_file,
+    std::unique_ptr<Index> index
 )
     : name(name),
       schema(std::move(_schema)),
-      heap_file(std::move(heap_file)) {
+      heap_file(std::move(heap_file)),
+      index(std::move(index)) {
   record_buf = std::make_unique<Record>(*schema);
 }

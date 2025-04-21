@@ -25,9 +25,9 @@ private:
 
   std::unique_ptr<HeapFilePage> current_page;
 
-  uint64_t total_pages;
+  int64_t total_pages;
 
-  uint64_t current_page_number;
+  int64_t current_page_number;
 
   int64_t current_page_record_pos;
 

@@ -2,7 +2,7 @@
 
 #include "system/system.h"
 
-constexpr uint64_t GB = 1024 * 1024 * 1024; // 1 GB
+constexpr int64_t GB = 1024 * 1024 * 1024; // 1 GB
 
 HeapFile& get_or_create_table(const std::string& table_name, std::vector<ColumnInfo>&& columns) {
   Schema table_schema(std::move(columns));
@@ -36,7 +36,7 @@ void populate_t3() {
 }
 
 int main() {
-  uint64_t buffer_size = 1 * GB;
+  auto buffer_size = 1 * GB;
   std::string database_folder = "data/test_example";
 
   // Need to call System::init before start using the database

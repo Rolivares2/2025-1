@@ -3,16 +3,18 @@
 #include <cassert>
 #include <cstring>
 
-#include "relational_model/record.h"
-
-Value::Value(Value&& other) : datatype(other.datatype), value(other.value) {
+Value::Value(Value&& other)
+    : datatype(other.datatype),
+      value(other.value) {
   if (datatype == DataType::STR) {
     // change datatype to avoid deleting value.as_str when other is destroyed
     other.datatype = DataType::INT;
   }
 }
 
-Value::Value(const Value& other) : datatype(other.datatype), value(other.value) {
+Value::Value(const Value& other)
+    : datatype(other.datatype),
+      value(other.value) {
   if (datatype == DataType::STR) {
     value.as_str = new char[MAX_STRLEN + 1];
     std::memcpy(value.as_str, other.value.as_str, MAX_STRLEN + 1);
@@ -47,9 +49,13 @@ void Value::operator=(Value&& other) {
   }
 }
 
-Value::Value(int64_t i) : datatype(DataType::INT), value(i) {}
+Value::Value(int64_t i)
+    : datatype(DataType::INT),
+      value(i) {}
 
-Value::Value(const char* str_value) : datatype(DataType::STR), value(nullptr) {
+Value::Value(const char* str_value)
+    : datatype(DataType::STR),
+      value(nullptr) {
   value.as_str = new char[MAX_STRLEN + 1];
 
   auto size = strlen(str_value);
@@ -57,7 +63,9 @@ Value::Value(const char* str_value) : datatype(DataType::STR), value(nullptr) {
   std::memcpy(value.as_str, str_value, size + 1); // size+1 to copy '\0'
 }
 
-Value::Value(const std::string& str_value) : datatype(DataType::STR), value(nullptr) {
+Value::Value(const std::string& str_value)
+    : datatype(DataType::STR),
+      value(nullptr) {
   value.as_str = new char[MAX_STRLEN + 1];
 
   auto size = str_value.size();

@@ -17,7 +17,7 @@ public:
   FileId get_file_id(const std::string& filename);
 
   // count how many pages a file have
-  uint64_t count_pages(FileId file_id) const {
+  int64_t count_pages(FileId file_id) const {
     // We don't need mutex here as long as db is readonly
     return lseek(file_id.id, 0, SEEK_END) / Page::SIZE;
   }

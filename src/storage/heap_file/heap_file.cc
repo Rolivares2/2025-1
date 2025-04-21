@@ -33,9 +33,9 @@ void HeapFile::delete_record(RID rid) {
 }
 
 void HeapFile::vacuum() {
-  uint64_t total_pages = file_mgr.count_pages(file_id);
+  auto total_pages = file_mgr.count_pages(file_id);
 
-  for (uint64_t i = 0; i < total_pages; i++) {
+  for (auto i = 0; i < total_pages; i++) {
     HeapFilePage page(file_id, i);
     page.vacuum(schema);
   }

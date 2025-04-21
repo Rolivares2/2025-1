@@ -8,9 +8,9 @@
 
 struct PageId {
   FileId file_id;
-  uint32_t page_number;
+  int32_t page_number;
 
-  PageId(FileId file_id, uint32_t page_number) : file_id(file_id), page_number(page_number) {}
+  PageId(FileId file_id, int32_t page_number) : file_id(file_id), page_number(page_number) {}
 
   // needed to allow std::map having PageId as key
   bool operator<(const PageId& other) const {

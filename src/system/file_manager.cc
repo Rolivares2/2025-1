@@ -35,7 +35,7 @@ void FileManager::read_page(PageId page_id, char* bytes) const {
 
   struct stat buf;
   fstat(fd, &buf);
-  uint64_t file_size = buf.st_size;
+  int64_t file_size = buf.st_size;
 
   lseek(fd, page_id.page_number * Page::SIZE, SEEK_SET);
   if (file_size / Page::SIZE <= page_id.page_number) {
