@@ -121,10 +121,49 @@ std::unique_ptr<BPlusTreeSplit> BPlusTreeDir::insert_record(const BPlusTreeRecor
     }
     // Case 2: we need to split this node and this node is not the root
     else if (page.get_page_number() != 0) {
-      // TODO: Problema 3
+    // 1. Encontrar el índice donde hay que insertar
+    auto split_child_idx = search_child_idx(split->record);
+    // 2. Secuencia ordenada de records con r_new
+    std::vector<BPlusTreeRecord> record_seq;
+    for (int i = 0; i < record_count; i++) {
+      record_seq.push_back(get_record(i));
     }
+    record_seq.insert(record_seq.begin() + split_child_idx, split->record);
+
+   // 3. Secuencia de punteros ordenada
+    std::vector<int32_t> pointer_seq;
+    for (int i = 0; i < child_count; i++) {
+      pointer_seq.push_back(get_child(i));
+    }
+    pointer_seq.insert(pointer_seq.begin() + split_child_idx + 1, split->encoded_page_number);
+
+    // 4. Crear página del directorio
+    BPlusTreeDir new_dir(bpt);
+    // 5. Se define el índice del medio
+    int middle = (max_records + 1) / 2;
+    // 6. Se define el split record
+    BPlusTreeRecord split_record = record_seq[middle];
+    // 7. Reestructura de la página original
+    for (int i = 0; i< middle; i++) {
+      set_record(i, record_seq[i]);
+    }
+    for (int i = 0; i <= middle; i++) {
+      set_child(i, pointer_seq[i]);
+    }
+    set_child_count(middle + 1);
+    // 8. Estructura página new_dir
+    int new_child_count = pointer_seq.size() - (middle + 1);
+    for (int i = 0; i < new_child_count - 1; i++) {
+      new_dir.set_record(i, record_seq[middle + 1 + i]);
+    }
+    for (int i = 0; i < new_child_count; i++) {
+      new_dir.set_child(i, pointer_seq[middle + 1 + i]);
+    }
+    new_dir.set_child_count(new_child_count);
+    // 9. Retornar objeto BPlusTree
+    return std::make_unique<BPlusTreeSplit>(split_record, -1 * new_dir.page.get_page_number());
     // Case 3: root split
-    else {
+    } else {
       auto last_record = get_record(max_records - 1);
       auto last_child = get_child(max_children - 1);
 

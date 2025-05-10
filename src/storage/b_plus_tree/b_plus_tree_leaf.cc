@@ -1,7 +1,7 @@
 #include "b_plus_tree_leaf.h"
 
 #include "system/system.h"
-
+#include <iostream>
 BPlusTreeLeaf::BPlusTreeLeaf(const BPlusTree& bpt, int32_t page_number)
     : bpt(bpt),
       page(buffer_mgr.get_page(bpt.leaf_file_id, page_number)) {}
@@ -15,7 +15,7 @@ BPlusTreeLeaf::~BPlusTreeLeaf() {
 }
 
 std::unique_ptr<BPlusTreeSplit> BPlusTreeLeaf::insert_record(const BPlusTreeRecord& record) {
-  const auto record_count = get_record_count();
+  auto record_count = get_record_count();
 
   // border case, needs to be handled differently
   if (record_count == 0) {
@@ -33,18 +33,20 @@ std::unique_ptr<BPlusTreeSplit> BPlusTreeLeaf::insert_record(const BPlusTreeReco
   if (record_count < max_records) {
     // TODO: Testear Problema 1
     const auto key = search_index(record);
-    for (auto i = record_count; i >= key; i--) {
-      set_record(i+1, get_record(i));
+    
+    for (int32_t i = record_count-1; i >= key; i--) {
+      set_record(i + 1, get_record(i));
     }
     set_record(key, record);
-    set_record_count(record_count++);
-    return nullptr
+    record_count++;
+    set_record_count(record_count);
+    return nullptr;
   } else {
     // TODO: Problema 2
     // 1. Encontrar el índice donde el record se inserta:
     const auto key = search_index(record);
     // 2. Definir secuencia
-    vector<BPlusTreeRecord> record_seq;
+    std::vector<BPlusTreeRecord> record_seq;
     for (int32_t i = 0; i < record_count; i++){
       // Se construye la secuencia hasta el record a insertar
       record_seq.push_back(get_record(i));
@@ -52,22 +54,26 @@ std::unique_ptr<BPlusTreeSplit> BPlusTreeLeaf::insert_record(const BPlusTreeReco
     // Se inserta el record dado en la función
     record_seq.insert(record_seq.begin() + key, record);
     // 3. Se crea una nueva hoja con el constructor BPlusTreeLeaf
-    BPlusTreeLeaf new_leaf = BPlusTreeLeaf(bpt);
+    BPlusTreeLeaf new_leaf(bpt);
     // 4. Definición del Middle index.
     const auto middle = (max_records+1)/2;
     // 5. Actualización del N de la hoja original
+    for (size_t i = 0; i < middle; i++) {
+      set_record(i, record_seq[i]);
+    }
     set_record_count(middle);
 
-    for (int32_t i = middle; i < record_seq.size(); i++) {
+    for (size_t i = middle; i < record_seq.size(); i++) {
       // Inserción de los records a la nueva hoja
       new_leaf.set_record(i - middle, record_seq[i]);
     }
     new_leaf.set_record_count((max_records/2)+1);
     new_leaf.set_next_page_number(get_next_page_number());
+
     // Actualización del next_ptr de la página original
     set_next_page_number(new_leaf.page.get_page_number());
     // 7. Retornar BPlusTreeSplit
-    return BPlusTreeSplit(new_leaf.get_record(0).encoded_key, new_leaf.page.get_page_number());
+    return std::make_unique<BPlusTreeSplit>(new_leaf.get_record(0), new_leaf.page.get_page_number());
   }
 }
 
@@ -79,7 +85,7 @@ void BPlusTreeLeaf::delete_record(const BPlusTreeRecord& record) {
   }
   // TODO: Bonus
 }
-push_back
+
 int32_t BPlusTreeLeaf::get_record_count() const {
   return page.read_int32(OFFSET_RECORD_COUNT);
 }
